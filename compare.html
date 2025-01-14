@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="odometer-theme-car.css">
+    <link rel="stylesheet" href="style.css">
+    <title>YouTube API SMC JS FINAL</title>
+</head>
+<body>
+    <main>
+        <div class="compare-container">
+            <div class="odometer-chart-container" id="odometer-chart-container-1">
+                <div class="search-container">
+                    <input class="search-info" type="text" placeholder="Search">
+                    <button class="search-button"></button>
+                </div>
+                <div class="thumbnail-channel-container">
+                    <img class="thumbnail" src="" alt="">
+                    <div class="channel-container">
+                        <img class="profile-pic" src="" alt="">
+                        <p class="channel-name"></p>
+                    </div>
+                </div>
+                <h2 class="title-video"></h2>
+                <div class="odometer-container" id="odometer-container-1">
+                    <h1 id="odometer" class="odometer" style="font-size: 80px;display: flex; justify-content: center;">0</h1>
+                    <p>Views</p>
+                    <div class="stats-container">
+                        <div class="likes-container">
+                            <h1 class="odometer" id="odometer"></h1>   
+                            <p>Likes</p>
+                        </div>
+                        <div class="dislikes-container">
+                            <h1 class="odometer" id="odometer"></h1>
+                            <p>Dislikes</p>               
+                        </div>
+                        <div class="comments-container">
+                            <h1 class="odometer" id="odometer"></h1>
+                            <p>Comments</p>                         
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="odometer-chart-container" id="odometer-chart-container-2">
+                <div class="search-container">
+                    <input class="search-info" placeholder="Search" type="text">
+                    <button class="search-button"></button>
+                </div>
+                <div class="thumbnail-channel-container">
+                    <img class="thumbnail" src="" alt="">
+                    <div class="channel-container">
+                        <img class="profile-pic" src="" alt="">
+                        <p class="channel-name"></p>
+                    </div>
+                </div>
+                <h2 class="title-video"></h2>
+                <div class="odometer-container" id="odometer-container-1">
+                    <h1 id="odometer" class="odometer" style="font-size: 80px;display: flex; justify-content: center;">0</h1>
+                    <p>Views</p>
+                    <div class="stats-container">
+                        <div class="likes-container">
+                            <h1 class="odometer" id="odometer"></h1>   
+                            <p>Likes</p>
+                        </div>
+                        <div class="dislikes-container">
+                            <h1 class="odometer" id="odometer"></h1>
+                            <p>Dislikes</p>               
+                        </div>
+                        <div class="comments-container">
+                            <h1 class="odometer" id="odometer"></h1>
+                            <p>Comments</p>                         
+                        </div>
+                    </div>
+                </div>  
+            </div>
+        </div>
+        <div class="difference-container">
+            <div class="odometer-chart-container">
+                <div class="odometer-container">
+                    <h1 id="odometer" class="odometer" style="font-size: 80px;display: flex; justify-content: center;">0</h1>
+                    <p>Difference</p>
+                </div>    
+                
+                <div class="chart-container">
+                    <canvas id="myChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="desc-container">
+            <h2>Instructions: </h2>
+            <p>Head over to <a href="https://youtube.com">YouTube</a> and select what ever video on the site. Then, copy the video id (preferably a video that is gaining a lot of views per minute) and paste it into the search bar on this web page. The view, like, dislike, and comment count will update and adapt to the video statistis as well as display some other content relating to the video. If another video id is pasted into the second search bar, the live difference of views between the two videos will update.</p>
+            <div class="iframe-container">
+                <iframe width="560" height="315" src="https://www.youtube.com/embed/XodZzqB29Sc?si=_5Dkb7OWV499mD5-" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
+    </main>
+</body>
+    <script src="node_modules/chart.js/dist/chart.umd.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="odometer.js"></script>
+    <script src="youtube_api_info.js"></script>
+    <script>
+        const API_KEY = "AIzaSyC0wiOHbJwFdJOZ1PTss1V6Ap5Oaavkqxc";
+        let CHANNEL_ID;
+
+        const differenceContainer = document.querySelector('.difference-container');
+        let viewCount1 = 0;
+        let viewCount2 = 0;   
+        let difference = 0; 
+        
+        let pastLikesCount1 = 0;
+        let pastLikesCount2 = 0;
+        let pastDislikesCount1 = 0;
+        let pastDislikesCount2 = 0;
+        let pastCommentsCount1 = 0;
+        let pastCommentsCount2 = 0;
+
+        let viewsArr1 = [];
+        let viewsArr2 = [];
+        let timeArr = [];
+
+        const goodGreen = "#5A9F68";
+        const goodRed = "#FA8072"
+
+        const ctx = document.querySelector('.chart-container').querySelector('#myChart');
+
+        const myChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: timeArr,
+                datasets: [
+                    {
+                    label: 'Views',
+                    data: viewsArr1,
+                    borderWidth: 1,
+                    borderJoinStyle: 'bevel',
+                    pointRadius: 0,
+                    borderWidth: 2,
+                    spanGaps: true,
+                    borderColor: '#69A6D3',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                elements: {
+                    line: {
+                        cubicInterpolationMode: 'monotone'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: false,
+                        grid: {
+                            color: "#576169"
+                        },
+                        ticks: {
+                            color: "#A9B7C0"
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false,
+                        },
+                        ticks: {
+                            color: "#A9B7C0"
+                        }
+                    }
+                }
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll(".odometer-chart-container").forEach((container, index) => {
+                const containerId = container.getAttribute('id');
+                
+                let isDifferent;
+                let intervalId;
+
+                const searchContainer = container.querySelector('.search-container');
+
+                const submitButton = searchContainer.querySelector('.search-button');
+
+                // ---------- VIDEO THUMBNAIL AND CHANNEL ELEMENTS -------- //
+                const thumbnailChannelContainer = container.querySelector(".thumbnail-channel-container");
+                const thumbnailElement = thumbnailChannelContainer.querySelector(".thumbnail");
+
+                const channelContainer = thumbnailChannelContainer.querySelector(".channel-container");
+                const channelName = channelContainer.querySelector(".channel-name");
+                const channelPic = channelContainer.querySelector(".profile-pic");
+
+                // -------------------------------------------------------- //
+
+                // -------- ODOMETER ELEMENTS (Views, likes, dislikes, comments) -------- //
+                const odometerElement = container.querySelector('.odometer-container').querySelector('#odometer');
+
+                const statsContainer = container.querySelector(".stats-container");
+                // likes elements
+                const likesContainer = statsContainer.querySelector(".likes-container");
+                const likesOdometer = likesContainer.querySelector("#odometer");
+                // dislikes elements
+                const dislikesContainer = statsContainer.querySelector(".dislikes-container");
+                const dislikesOdometer = dislikesContainer.querySelector("#odometer");
+                // commenets elements
+                const commentsContainer = statsContainer.querySelector(".comments-container");
+                const commentsOdometer = commentsContainer.querySelector("#odometer");
+                // ---------------------------------------------------------------------- //
+
+                submitButton.addEventListener('click', () => {
+                    const VIDEO_ID = searchContainer.querySelector('.search-info').value.trim();
+
+                    //-------------- GET THE VIDEO INFO AND DISPLAY -----------//
+                    const titleElement = container.querySelector(".title-video");
+
+                    fetch(`https://www.googleapis.com/youtube/v3/videos/?part=snippet&id=${VIDEO_ID}&key=${API_KEY}`)
+                        .then((response) => {
+                            return response.json();
+                        })
+                        .then((data) => {
+                            titleElement.innerHTML = data.items[0].snippet.title;
+                            thumbnailElement.src = data.items[0].snippet.thumbnails.high.url;
+                            channelName.innerHTML = data.items[0].snippet.channelTitle;
+                            CHANNEL_ID = data.items[0].snippet.channelId;
+
+                            return fetch(`https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${CHANNEL_ID}&key=${API_KEY}`);
+                        })
+                            .then(response => {
+                                return response.json();
+                            })
+                            .then(data => {
+                                channelPic.src = data.items[0].snippet.thumbnails.default.url;
+                                channelPic.style.setProperty("--borderThickness", "3px");
+                            })
+                            .catch(err => {
+                                console.log(err);
+                            })
+                        .catch((err) => {
+                            console.log(err);
+                        });
+
+                    //---------------------------------------------------------//
+
+                    if (intervalId) {
+                        clearInterval(intervalId);
+                    }
+
+                    intervalId = setInterval(() => {
+                        const animateColor = (current, past, odo) => {
+                            console.log(current, past, odo);
+                            if (current > past) {
+                                odo.style.setProperty('--colorVar', goodGreen);
+                                odo.classList.add('animate-colorChange');
+                                setTimeout(() => {
+                                    odo.classList.remove('animate-colorChange');
+                                }, 1500);
+                            } else if (current < past) {
+                                odo.style.setProperty('--colorVar', goodRed);
+                                odo.classList.add('animate-colorChange');
+                                setTimeout(() => {
+                                    odo.classList.remove('animate-colorChange');
+                                }, 1500);
+                            } 
+                        }
+
+                        fetch(`https://www.googleapis.com/youtube/v3/videos/?part=statistics&id=${VIDEO_ID}&key=${API_KEY}`)
+                        .then((response) => {
+                            return response.json();
+                        })
+                        .then((data) => {
+                            let viewCount = Number(data.items[0].statistics.viewCount);
+                            let likeCount = Number(data.items[0].statistics.likeCount);
+                            let dislikeCount = Number(data.items[0].statistics.dislikeCount);
+                            let commentCount = Number(data.items[0].statistics.commentCount);
+
+                            let date = `${new Date().getHours()}:${new Date().getMinutes()}:${new Date().getSeconds()}`;
+
+                            if (containerId == "odometer-chart-container-1") {
+                                animateColor(viewCount, viewCount1, odometerElement);
+                                viewCount1 = viewCount;
+                                animateColor(likeCount, pastLikesCount1, likesOdometer);
+                                pastLikesCount1 = likeCount;
+                                animateColor(commentCount, pastCommentsCount1, commentsOdometer);
+                                pastCommentsCount1 = commentCount;
+                            } else if (containerId == "odometer-chart-container-2") {
+                                animateColor(viewCount, viewCount2, odometerElement);
+                                viewCount2 = viewCount;
+                                animateColor(likeCount, pastLikesCount2, likesOdometer);
+                                pastLikesCount2 = likeCount;
+                                animateColor(commentCount, pastCommentsCount2, commentsOdometer);
+                                pastCommentsCount2 = commentCount;
+                            }
+
+                            // ---------- Update the Odometers ---------- //
+                            odometerElement.innerHTML = viewCount;
+                            likesOdometer.innerHTML = likeCount;
+                            commentsOdometer.innerHTML = commentCount;
+
+                            // ------------------------------------------//
+                            // update the difference
+                            differenceOdometerElement = differenceContainer.querySelector(".odometer-chart-container")
+                                .querySelector(".odometer-container")
+                                .querySelector("#odometer");
+                            let newDifference = Math.abs(viewCount1 - viewCount2);
+                            animateColor(newDifference, difference, differenceOdometerElement);
+                            difference = newDifference;
+                            differenceOdometerElement.innerHTML = newDifference;
+
+                            // update the chart
+                            myChart.data.labels.push(date);
+                            myChart.data.datasets[0].data.push(difference);
+                            myChart.update();
+                        })
+                        .catch((err) => {
+                            console.log(err);
+                        });
+
+                        // ------- Retrieve the dislikes bc youtube is a BITCH ------- //
+
+                        fetch(`https://returnyoutubedislikeapi.com/votes?videoId=${VIDEO_ID}`)
+                            .then((response) => {
+                                return response.json();
+                            })
+                            .then((data) => {
+                                if (containerId == "odometer-chart-container-1") {
+                                    animateColor(data.dislikes, pastDislikesCount1, dislikesOdometer);
+                                    pastDislikesCount1 = data.dislikes;
+                                } else if (containerId == "odometer-chart-container-2") {
+                                    animateColor(data.dislikes, pastDislikesCount2, dislikesOdometer);
+                                    pastDislikesCount2 = data.dislikes;
+                                }
+
+                                dislikesOdometer.innerHTML = data.dislikes;
+                                
+                            })
+                            .catch((err) => {
+                                console.log(err);
+                            })
+
+                        // ----------------------------------------------------------- //
+                    }, 3000);
+                })
+            });
+        });
+    </script>
+</html>
